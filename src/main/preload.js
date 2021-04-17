@@ -19,7 +19,7 @@ contextBridge.exposeInMainWorld('electron', {
       }
     },
     once(channel, func) {
-      const validChannels = ['ipc-example'];
+      const validChannels = ['ipc-example', 'ipc-replace-image'];
       if (validChannels.includes(channel)) {
         // Deliberately strip event as it includes `sender`
         ipcRenderer.once(channel, (event, ...args) => func(...args));

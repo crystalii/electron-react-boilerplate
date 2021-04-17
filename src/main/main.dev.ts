@@ -11,9 +11,10 @@
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import fs from 'fs/promises';
 import MenuBuilder from './menu';
 import util from './util';
 
@@ -31,6 +32,28 @@ ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string): string => `IPC test: ${pingPong}`;
   console.log(msgTemplate(arg));
   event.reply('ipc-example', msgTemplate('pong'));
+});
+
+ipcMain.on('ipc-replace-image', async (event) => {
+  const selectedFiles = await dialog.showOpenDialog({
+    properties: ['openFile'],
+    filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg'] }],
+  });
+  const response = { canceled: selectedFiles.canceled };
+  if (!selectedFiles.canceled) {
+    try {
+      const b64ImageData = await fs.readFile(
+        selectedFiles.filePaths[0],
+        'base64'
+      );
+      const ext = path.extname(selectedFiles.filePaths[0]);
+      response.imageData = `data:image/${ext};base64,${b64ImageData}`;
+    } catch (err) {
+      console.log(err);
+      response.canceled = true;
+    }
+  }
+  event.reply('ipc-replace-image', response);
 });
 
 if (process.env.NODE_ENV === 'production') {
